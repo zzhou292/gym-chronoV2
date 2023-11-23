@@ -218,8 +218,9 @@ class cobra_corridor(ChronoBaseEnv):
         # -----------------------------
         self.ros_manager = chros.ChROSManager()
         self.ros_manager.RegisterHandler(chros.ChROSClockHandler())
-        # self.ros_manager.RegisterHandler(chros.ChROSCameraHandler(
-        #         self.cam.GetUpdateRate() / 4, self.cam, "~/output/camera/data/image_" + str(self.cpu_number)))
+        self.ros_manager.RegisterHandler(chros.ChROSCameraHandler(
+                self.cam.GetUpdateRate() / 4, self.cam, "~/output/camera/data/image_" + str(self.cpu_number)))
+        self.ros_manager.RegisterHandler(chros.ChROSLidarHandler(self.lidar, "~/output/lidar/data/pointcloud_" + str(self.cpu_number)))
         self.ros_manager.RegisterHandler(chros.ChROSBodyHandler(25, self.rover.GetChassis().GetBody(), "~/output/cobra/state_" + str(self.cpu_number)))
 
         self.ros_manager.Initialize()
@@ -258,6 +259,7 @@ class cobra_corridor(ChronoBaseEnv):
 
         for i in range(self._steps_per_control):
             self.rover.Update()
+            self.sens_manager.Update()
             self.system.DoStepDynamics(self._step_size)
             self.ros_manager.Update(self.system.GetChTime(), self._step_size)
 
@@ -558,10 +560,21 @@ class cobra_corridor(ChronoBaseEnv):
                               chrono.Q_from_AngAxis(.2, chrono.ChVectorD(0, 1, 0)))
 
         self.sens_manager = sens.ChSensorManager(self.system)
+
+        # camera
         self.cam = sens.ChCameraSensor(self.rover.GetChassis().GetBody(), 30, offset_pose, 1280,  720, 1.408)
         self.cam.PushFilter(sens.ChFilterVisualize(1280, 720))
         self.cam.PushFilter(sens.ChFilterRGBA8Access())
         self.sens_manager.AddSensor(self.cam)
+
+        # lidar
+        self.lidar = sens.ChLidarSensor(self.rover.GetChassis().GetBody(), 5., offset_pose, 90, 300,
+                            2*chrono.CH_C_PI, chrono.CH_C_PI / 12, -chrono.CH_C_PI / 6, 100., 0)
+        self.lidar.PushFilter(sens.ChFilterDIAccess())
+        self.lidar.PushFilter(sens.ChFilterPCfromDepth())
+        self.lidar.PushFilter(sens.ChFilterXYZIAccess())
+        self.lidar.PushFilter(sens.ChFilterVisualizePointCloud(1280, 720, 1))
+        self.sens_manager.AddSensor(self.lidar)
 
         # pass
 
