@@ -36,6 +36,10 @@ import torch as th
 from gym_chrono.envs.driving.cobra_corridor_ros import cobra_corridor
 
 
+from multiprocessing import Process
+import subprocess
+
+
 class TensorboardCallback(BaseCallback):
     """
     Custom callback for plotting additional values in tensorboard.
@@ -88,6 +92,21 @@ def make_env(rank: int, seed: int = 0) -> Callable:
     set_random_seed(seed)
     return _init
 
+def run_ros_node(cpu_id):
+    # Run the ROS 2 node script with the CPU ID as an argument
+    subprocess.run(["python3", "ros2node.py", str(cpu_id)])
+
+def ros_setup(num_cpu):
+    ros_processes = []
+    for cpu_id in range(num_cpu):
+        p = Process(target=run_ros_node, args=(cpu_id,))
+        p.start()
+        ros_processes.append(p)
+
+    # Not sure if I need this
+    # for p in ros_processes:
+    #     p.join()
+
 
 if __name__ == '__main__':
     env_single = cobra_corridor(1)
@@ -108,6 +127,10 @@ if __name__ == '__main__':
     log_path = "logs/"
     # set up logger
     new_logger = configure(log_path, ["stdout", "csv", "tensorboard"])
+    
+    # Added ros nodes
+    # ros_setup(num_cpu)
+
     # Vectorized envieroment
     env = SubprocVecEnv([make_env(i) for i in range(num_cpu)])
     model = PPO('MlpPolicy', env, learning_rate=1e-3, n_steps=n_steps,
