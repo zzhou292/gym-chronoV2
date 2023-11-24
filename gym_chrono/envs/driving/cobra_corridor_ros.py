@@ -74,6 +74,42 @@ import numpy as np
 # Gymnasium imports
 import gymnasium as gym
 
+#import ros2
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+from geometry_msgs.msg import PoseStamped
+
+class ROSConnector(Node):
+    def __init__(self, cpu_number, name='ros_connector'):
+        super().__init__(name)
+        topic_name = f"/current_pose_{cpu_number}"  # Dynamic topic name
+        self.subscription = self.create_subscription(
+            PoseStamped,  # Replace with your message type
+            topic_name,
+            self.listener_callback,
+            10)
+        self.received_data = False  # Store received data
+        self.x = None
+        self.y = None
+        self.heading = None
+
+    def listener_callback(self, msg):
+        # self.received_data = msg.data  # Update this based on your message type
+        self.received_data = True
+        self.x = msg.pose.position.x
+        self.y = msg.pose.position.y
+
+        orientation_q = msg.pose.orientation
+        quaternion = (
+            orientation_q.x,
+            orientation_q.y,
+            orientation_q.z,
+            orientation_q.w
+        )
+        euler = tf_transformations.euler_from_quaternion(quaternion)
+        self.heading = euler[2]
+
 
 class cobra_corridor(ChronoBaseEnv):
     """
@@ -87,6 +123,14 @@ class cobra_corridor(ChronoBaseEnv):
         SetChronoDataDirectories()
 
         self.cpu_number = cpu_number
+
+        # ----------------------------
+        # ROS Setup
+        # -----------------------------
+        rclpy.init(args=None)
+        self.ros_connector = ROSConnector(self.cpu_number)
+        self.ros_executor = rclpy.executors.SingleThreadedExecutor()
+        self.ros_executor.add_node(self.ros_connector)
 
         # ----------------------------
         # Action and observation space
@@ -466,6 +510,15 @@ class cobra_corridor(ChronoBaseEnv):
             7. y position of obstacle in local frame of the vehicle
             8. radius of obstacle
         """
+        # ROS Observation - Pose Estimation - LiDAR Slam  -- INTEGRATE THIS IN
+        if self.ros_connector.received_data is not None:
+            ros_X = self.ros_connector.x
+            ros_Y = self.ros_connector.y
+            ros_heading = self.ros_connector.heading
+
+
+
+
         observation = np.zeros(5 + self.num_obs*3)
 
         self.vehicle_pos = self.rover.GetChassis().GetPos()
