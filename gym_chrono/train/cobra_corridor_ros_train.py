@@ -94,7 +94,15 @@ def make_env(rank: int, seed: int = 0) -> Callable:
 
 def run_ros_node(cpu_id):
     # Run the ROS 2 node script with the CPU ID as an argument
-    subprocess.run(["python3", "ros2node.py", str(cpu_id)])
+    # subprocess.run(["python3", "ros2node.py", str(cpu_id)])
+
+    launch_command = [
+        'ros2', 'launch',
+        'lidarslam', 'lidarslam.launch.py',
+        f'cpu_id:={cpu_id}'  # Include the cpu_id parameter
+    ]
+
+    subprocess.run(launch_command)
 
 def ros_setup(num_cpu):
     ros_processes = []
@@ -129,7 +137,7 @@ if __name__ == '__main__':
     new_logger = configure(log_path, ["stdout", "csv", "tensorboard"])
     
     # Added ros nodes
-    # ros_setup(num_cpu)
+    ros_setup(num_cpu)
 
     # Vectorized envieroment
     env = SubprocVecEnv([make_env(i) for i in range(num_cpu)])
