@@ -262,6 +262,7 @@ class cobra_corridor(ChronoBaseEnv):
         # -----------------------------
         self.ros_manager = chros.ChROSManager()
         self.ros_manager.RegisterHandler(chros.ChROSClockHandler())
+        self.ros_manager.RegisterHandler(chros.ChROSTFHandler(50, self.lidar, self.rover.GetChassis().GetBody(), "/tf"))
         self.ros_manager.RegisterHandler(chros.ChROSCameraHandler(
                 self.cam.GetUpdateRate() / 4, self.cam, "~/output/camera/data/image_" + str(self.cpu_number)))
         self.ros_manager.RegisterHandler(chros.ChROSLidarHandler(self.lidar, "~/output/lidar/data/pointcloud_" + str(self.cpu_number)))

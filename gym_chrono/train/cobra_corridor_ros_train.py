@@ -120,7 +120,7 @@ if __name__ == '__main__':
     env_single = cobra_corridor(1)
     ####### PARALLEL ##################
 
-    num_cpu = 4
+    num_cpu = 3
     n_steps = 1000  # Set to make an update after the end of 1 episode (50 s)
 
     # Set mini batch is the experiences from one episode (50 s) so the whole batch is consumed to make an update
