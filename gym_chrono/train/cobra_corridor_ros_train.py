@@ -95,7 +95,7 @@ def make_env(rank: int, seed: int = 0) -> Callable:
 def run_ros_node(cpu_id):
     # Run the ROS 2 node script with the CPU ID as an argument
     # subprocess.run(["python3", "ros2node.py", str(cpu_id)])
-
+    os.environ['ROS_DOMAIN_ID'] = str(cpu_id)
     launch_command = [
         'ros2', 'launch',
         'lidarslam', 'lidarslam.launch.py',

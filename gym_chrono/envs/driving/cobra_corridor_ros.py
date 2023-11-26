@@ -124,6 +124,9 @@ class cobra_corridor(ChronoBaseEnv):
 
         self.cpu_number = cpu_number
 
+        os.environ['ROS_DOMAIN_ID'] = str(self.cpu_number)
+
+
         # ----------------------------
         # ROS Setup
         # -----------------------------
